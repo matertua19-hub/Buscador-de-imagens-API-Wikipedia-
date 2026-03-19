@@ -12,14 +12,16 @@ def home():
 def buscar_v2(q: str):
     termo_seguro = quote(q)
     
-    # MUDANÇA CHAVE: Usamos 'generator=search' para busca por relevância
-    # Isso permite que 'maceio' (sem acento) encontre resultados de 'Maceió'
+        # Adicionamos 'File:' ao termo para que a busca foque em arquivos de imagem
+    termo_seguro = quote(f"File:{q}")
+    
     url_wikimedia = (
         f"https://commons.wikimedia.org/w/api.php?"
         f"action=query&format=json&origin=*&generator=search"
         f"&gsrsearch={termo_seguro}&gsrlimit=10"
         f"&prop=imageinfo&iiprop=url|canonicalurl"
     )
+
     
     try:
         headers = {'User-Agent': 'BuscadorInteligente/1.1'}
