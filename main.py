@@ -1,53 +1,36 @@
-from fastapi import FastAPI, HTTPException
-import requests
+import asyncio
+import httpx # Recomendado para buscas assíncronas em lote
+from fastapi import FastAPI
 from urllib.parse import quote
 
 app = FastAPI()
 
-@app.get("/")
-def home():
-    return {"status": "Online", "msg": "Use /buscar/termo"}
-
-# MUDANÇA CHAVE: O termo 'q' agora faz parte da rota {q}
-@app.get("/buscar/{q}")
-def buscar_v5(q: str):
-    if not q or len(q.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Termo de busca vazio")
-
-    # Tratamento de segurança e prefixo para a Wikipedia
-    termo_limpo = q.strip()
-    termo_seguro = quote(f"File:{termo_limpo}")
-    
-    url_wikimedia = (
+async def buscar_uma_imagem(client, termo):
+    termo_seguro = quote(f"File:{termo.strip()}")
+    url = (
         f"https://commons.wikimedia.org/w/api.php?"
         f"action=query&format=json&origin=*&generator=search"
-        f"&gsrsearch={termo_seguro}&gsrlimit=10"
-        f"&prop=imageinfo&iiprop=url"
+        f"&gsrsearch={termo_seguro}&gsrlimit=1&prop=imageinfo&iiprop=url"
     )
-    
     try:
-        headers = {'User-Agent': 'BuscadorRobustoIA/1.5'}
-        response = requests.get(url_wikimedia, headers=headers, timeout=10)
+        response = await client.get(url, timeout=5)
         data = response.json()
-        
         pages = data.get("query", {}).get("pages", {})
-        
-        if not pages:
-            return {"aviso": "Nenhuma imagem encontrada", "termo": termo_limpo, "resultados": []}
-
-        resultado = []
         for page in pages.values():
             if "imageinfo" in page:
-                resultado.append({
-                    "titulo": page.get("title"),
-                    "link": page["imageinfo"][0]["url"]
-                })
-        
-        return {
-            "termo_processado": termo_limpo,
-            "total": len(resultado),
-            "resultados": resultado
-        }
-        
-    except Exception as e:
-        return {"erro": "Falha na comunicação com Wikipedia", "detalhes": str(e)}
+                return {"termo": termo, "link": page["imageinfo"][0]["url"]}
+    except:
+        return {"termo": termo, "link": "Não encontrado"}
+    return {"termo": termo, "link": "Não encontrado"}
+
+@app.post("/batch")
+async def buscar_lote(dados: dict):
+    # 'texto' seria o que você colou do clipboard (ex: "Maceió, Farol, Alagoas")
+    texto = dados.get("texto", "")
+    termos = [t.strip() for t in texto.replace("\n", ",").split(",") if t.strip()]
+    
+    async with httpx.AsyncClient() as client:
+        tarefas = [buscar_uma_imagem(client, termo) for termo in termos]
+        resultados = await asyncio.gather(*tarefas)
+    
+    return {"resultados": resultados}
