@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <title>Buscador de Imagens em Lote</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        textarea { width: 100%; height: 150px; margin-bottom: 10px; }
+        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; }
+        #resultados { margin-top: 20px; background: #f4f4f4; padding: 15px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h2>Colar Temas da LLM</h2>
+    <textarea id="inputTemas" placeholder="Ex: Maceió, Farol da Ponta Verde, Marechal Deodoro..."></textarea>
+    <button onclick="buscarTudo()">Buscar URLs de Imagens</button>
+
+    <h3>Resultado para Copiar:</h3>
+    <div id="resultados">Os links aparecerão aqui...</div>
+
+    <script>
+        async function buscarTudo() {
+            const texto = document.getElementById('inputTemas').value;
+            // Divide por vírgula ou quebra de linha
+            const termos = texto.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
+            const display = document.getElementById('resultados');
+            display.innerHTML = "Buscando... aguarde.";
+            
+            let linksFormatados = "";
+
+            for (let termo of termos) {
+                try {
+                    // Substitua pela sua URL do Vercel
+                    const resp = await fetch(`/buscar/${encodeURIComponent(termo)}`);
+                    const data = await resp.json();
+                    if (data.link && data.link.startsWith("http")) {
+                        linksFormatados += `${termo}: ${data.link}\n`;
+                    }
+                } catch (e) {
+                    console.error("Erro ao buscar " + termo);
+                }
+            }
+
+            display.innerText = linksFormatados || "Nenhum link encontrado.";
+        }
+    </script>
+</body>
+</html>
