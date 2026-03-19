@@ -5,13 +5,18 @@ from urllib.parse import quote
 
 app = FastAPI()
 
-# Permite que o seu HTML fale com a API sem bloqueios
+# ISSO É O QUE LIBERA O ACESSO PARA O SEU SITE
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # Permite acesso de qualquer lugar
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+def home():
+    return {"status": "online", "message": "API de Imagens Pronta"}
 
 @app.get("/buscar/{q}")
 def buscar(q: str):
@@ -21,13 +26,18 @@ def buscar(q: str):
         f"action=query&format=json&origin=*&generator=search"
         f"&gsrsearch={termo_seguro}&gsrlimit=1&prop=imageinfo&iiprop=url"
     )
+    
     try:
-        response = requests.get(url_wikimedia, timeout=5)
+        headers = {'User-Agent': 'MeuBuscadorIA/1.0'}
+        response = requests.get(url_wikimedia, headers=headers, timeout=5)
         data = response.json()
+        
         pages = data.get("query", {}).get("pages", {})
+        
         for page in pages.values():
             if "imageinfo" in page:
                 return {"termo": q, "link": page["imageinfo"][0]["url"]}
+        
         return {"termo": q, "link": "Não encontrado"}
-    except:
-        return {"termo": q, "link": "Erro na busca"}
+    except Exception as e:
+        return {"termo": q, "link": f"Erro: {str(e)}"}
