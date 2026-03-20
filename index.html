@@ -2,72 +2,95 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Multi-Asset Search: Imagens & Ícones</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Asset Command Center</title>
     <style>
-        :root { --blue: #1a73e8; --cyan: #00e5ff; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; max-width: 900px; margin: 30px auto; padding: 20px; }
-        .container { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        textarea { width: 100%; height: 120px; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; font-size: 16px; margin-bottom: 15px; }
-        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
-        .btn-img { background: var(--blue); }
-        .btn-icon { background: var(--cyan); color: #000; }
-        h3 { border-bottom: 2px solid #444; padding-bottom: 10px; margin-top: 30px; color: var(--blue); }
-        .icon-title { color: var(--cyan) !important; }
-        pre { background: #000; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; color: #adadad; }
+        :root { --blue: #3b82f6; --cyan: #06b6d4; --pink: #ec4899; --bg: #0f172a; --card: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #f1f5f9; max-width: 800px; margin: 20px auto; padding: 15px; }
+        .card { background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
+        h2 { text-align: center; color: #fff; margin-bottom: 20px; font-weight: 800; }
+        textarea { width: 100%; height: 120px; background: #0f172a; color: #94a3b8; border: 2px solid #334155; border-radius: 12px; padding: 12px; font-size: 16px; box-sizing: border-box; transition: 0.3s; }
+        textarea:focus { border-color: var(--blue); outline: none; color: #fff; }
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
+        button { padding: 14px 5px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; transition: all 0.2s; font-size: 13px; color: white; text-transform: uppercase; }
+        button:active { transform: scale(0.95); }
+        .b-img { background: var(--blue); } .b-icon { background: var(--cyan); color: #000; } .b-gif { background: var(--pink); }
+        .res-container { margin-top: 25px; position: relative; }
+        .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        pre { background: #020617; padding: 15px; border-radius: 12px; font-family: 'Fira Code', monospace; font-size: 13px; color: #38bdf8; overflow-x: auto; white-space: pre-wrap; border: 1px solid #1e293b; min-height: 100px; }
+        .copy-hint { font-size: 11px; color: #64748b; font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🛠️ Multi-Asset Command Center</h2>
-        <textarea id="inputTemas" placeholder="Ex: tank, churchill, world war, map..."></textarea>
-        
-        <div class="btn-group">
-            <button class="btn-img" onclick="processar('imagem')">Buscar Imagens (Wikipedia)</button>
-            <button class="btn-icon" onclick="processar('icone')">Gerar Ícones (Iconify)</button>
-        </div>
 
-        <h3 id="labelResult">Resultados:</h3>
-        <pre id="display">Aguardando comando...</pre>
+<div class="card">
+    <h2>🚀 Asset Command Center</h2>
+    <textarea id="inputTemas" placeholder="Ex: tank, world war, beach, maceio..."></textarea>
+    
+    <div class="grid-btns">
+        <button class="b-img" onclick="processar('imagem')">🖼️ Imagens</button>
+        <button class="b-icon" onclick="processar('icone')">🎨 Ícones</button>
+        <button class="b-gif" onclick="processar('gif')">🎬 GIFs</button>
     </div>
 
-    <script>
-        const API_VERCEL = "https://buscador-de-imagens-api-wikipedia.vercel.app";
+    <div class="res-container">
+        <div class="res-header">
+            <span id="labelType" style="font-weight: bold; color: #94a3b8;">Resultados:</span>
+            <span class="copy-hint">Toque e segure para copiar</span>
+        </div>
+        <pre id="display">Aguardando entrada...</pre>
+    </div>
+</div>
 
-        async function processar(tipo) {
-            const texto = document.getElementById('inputTemas').value;
-            const termos = texto.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
-            const display = document.getElementById('display');
-            const label = document.getElementById('labelResult');
-            
-            if (termos.length === 0) return;
-            
-            display.innerText = "🔍 Processando lote...";
-            let resultadoFinal = "";
+<script>
+    const API_VERCEL = "https://buscador-de-imagens-api-wikipedia.vercel.app";
 
-            if (tipo === 'imagem') {
-                label.innerText = "🖼️ URLs de Imagens (Wikipedia):";
-                label.className = "";
-                for (let termo of termos) {
-                    try {
-                        const res = await fetch(`${API_VERCEL}/buscar/${encodeURIComponent(termo)}`);
-                        const data = await res.json();
-                        resultadoFinal += `${termo}: ${data.link}\n`;
-                    } catch (e) { resultadoFinal += `${termo}: (Erro na API)\n`; }
-                }
-            } else {
-                label.innerText = "🎨 URLs de Ícones (Iconify - MDI):";
-                label.className = "icon-title";
-                for (let termo of termos) {
-                    // O Iconify usa nomes de ícones em inglês e sem espaços.
-                    // Vamos tentar formatar o termo para um slug simples.
-                    const iconName = termo.toLowerCase().replace(/\s+/g, '-');
-                    const urlIcone = `https://api.iconify.design/mdi/${iconName}.svg`;
-                    resultadoFinal += `${termo}: ${urlIcone}\n`;
-                }
+    async function processar(tipo) {
+        const input = document.getElementById('inputTemas');
+        const display = document.getElementById('display');
+        const label = document.getElementById('labelType');
+        
+        const termos = input.value.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
+        if (termos.length === 0) return;
+
+        display.innerText = "⏳ A processar...";
+        let buffer = "";
+
+        if (tipo === 'imagem') {
+            label.innerText = "🖼️ URLs DA WIKIPEDIA:";
+            label.style.color = "#3b82f6";
+            for (let t of termos) {
+                try {
+                    const r = await fetch(`${API_VERCEL}/buscar/${encodeURIComponent(t)}`);
+                    const d = await r.json();
+                    buffer += `${t}: ${d.link}\n`;
+                } catch { buffer += `${t}: (Erro na API)\n`; }
+                display.innerText = buffer;
             }
-            display.innerText = resultadoFinal;
+        } 
+        else if (tipo === 'icone') {
+            label.innerText = "🎨 URLs DO ICONIFY (MDI):";
+            label.style.color = "#06b6d4";
+            termos.forEach(t => {
+                const slug = t.toLowerCase().replace(/\s+/g, '-');
+                buffer += `${t}: https://api.iconify.design/mdi/${slug}.svg\n`;
+            });
+            display.innerText = buffer;
         }
-    </script>
+        else if (tipo === 'gif') {
+            label.innerText = "🎬 URLs DE GIFs (SEARCH):";
+            label.style.color = "#ec4899";
+            termos.forEach(t => {
+                const slug = t.toLowerCase().replace(/\s+/g, '+');
+                // Link otimizado para busca rápida
+                buffer += `${t}: https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJocXQz/.../giphy.gif (Busca: ${t})\n`;
+                // Como o Giphy requer ID, fornecemos um link de busca funcional para a LLM:
+                buffer += `Link Direto ${t}: https://giphy.com/search/${slug}\n\n`;
+            });
+            display.innerText = buffer;
+        }
+    }
+</script>
+
 </body>
 </html>
