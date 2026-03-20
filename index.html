@@ -2,70 +2,72 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Buscador de Imagens em Lote - IA Helper</title>
+    <title>Multi-Asset Search: Imagens & Ícones</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; line-height: 1.6; background-color: #f0f2f5; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #1a73e8; margin-top: 0; }
-        textarea { width: 100%; height: 180px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; resize: vertical; }
-        button { background-color: #1a73e8; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
-        button:hover { background-color: #1557b0; }
-        #resultados { margin-top: 25px; background: #282c34; color: #61dafb; padding: 20px; border-radius: 8px; min-height: 100px; font-family: 'Courier New', Courier, monospace; overflow-x: auto; }
-        .instrucao { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        :root { --blue: #1a73e8; --cyan: #00e5ff; --bg: #121212; --card: #1e1e1e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; max-width: 900px; margin: 30px auto; padding: 20px; }
+        .container { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        textarea { width: 100%; height: 120px; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; font-size: 16px; margin-bottom: 15px; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
+        .btn-img { background: var(--blue); }
+        .btn-icon { background: var(--cyan); color: #000; }
+        h3 { border-bottom: 2px solid #444; padding-bottom: 10px; margin-top: 30px; color: var(--blue); }
+        .icon-title { color: var(--cyan) !important; }
+        pre { background: #000; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; color: #adadad; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🚀 Buscador de Imagens em Lote</h2>
-        <p class="instrucao">Cole os temas sugeridos pela LLM (separados por vírgula ou linha):</p>
+        <h2>🛠️ Multi-Asset Command Center</h2>
+        <textarea id="inputTemas" placeholder="Ex: tank, churchill, world war, map..."></textarea>
         
-        <textarea id="inputTemas" placeholder="Ex: Maceió, Praia do Francês, Rio São Francisco..."></textarea>
-        
-        <button id="btnBuscar">Buscar URLs de Imagens</button>
+        <div class="btn-group">
+            <button class="btn-img" onclick="processar('imagem')">Buscar Imagens (Wikipedia)</button>
+            <button class="btn-icon" onclick="processar('icone')">Gerar Ícones (Iconify)</button>
+        </div>
 
-        <h3>📋 Resultado para Copiar:</h3>
-        <div id="resultados">Os links prontos aparecerão aqui...</div>
+        <h3 id="labelResult">Resultados:</h3>
+        <pre id="display">Aguardando comando...</pre>
     </div>
 
     <script>
-        // O MOTOR DO SITE COMEÇA AQUI
-        const btn = document.getElementById('btnBuscar');
-        const display = document.getElementById('resultados');
-        const input = document.getElementById('inputTemas');
+        const API_VERCEL = "https://buscador-de-imagens-api-wikipedia.vercel.app";
 
-        btn.onclick = async () => {
-            const texto = input.value;
+        async function processar(tipo) {
+            const texto = document.getElementById('inputTemas').value;
             const termos = texto.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
+            const display = document.getElementById('display');
+            const label = document.getElementById('labelResult');
             
-            if (termos.length === 0) {
-                display.innerText = "Por favor, cole algum tema primeiro!";
-                return;
-            }
+            if (termos.length === 0) return;
+            
+            display.innerText = "🔍 Processando lote...";
+            let resultadoFinal = "";
 
-            display.innerHTML = "🔍 Buscando imagens na Wikipedia... aguarde.";
-            let linksFormatados = "";
-
-            // URL DA SUA API NO VERCEL
-            const URL_BASE = "https://buscador-de-imagens-api-wikipedia.vercel.app";
-
-            for (let termo of termos) {
-                try {
-                    // Faz a chamada para a sua rota /buscar/{q}
-                    const response = await fetch(`${URL_BASE}/buscar/${encodeURIComponent(termo)}`);
-                    const data = await response.json();
-
-                    if (data.link && data.link.includes("http")) {
-                        linksFormatados += `${termo}: ${data.link}\n`;
-                    } else {
-                        linksFormatados += `${termo}: (Não encontrado)\n`;
-                    }
-                } catch (error) {
-                    linksFormatados += `${termo}: (Erro de conexão)\n`;
+            if (tipo === 'imagem') {
+                label.innerText = "🖼️ URLs de Imagens (Wikipedia):";
+                label.className = "";
+                for (let termo of termos) {
+                    try {
+                        const res = await fetch(`${API_VERCEL}/buscar/${encodeURIComponent(termo)}`);
+                        const data = await res.json();
+                        resultadoFinal += `${termo}: ${data.link}\n`;
+                    } catch (e) { resultadoFinal += `${termo}: (Erro na API)\n`; }
+                }
+            } else {
+                label.innerText = "🎨 URLs de Ícones (Iconify - MDI):";
+                label.className = "icon-title";
+                for (let termo of termos) {
+                    // O Iconify usa nomes de ícones em inglês e sem espaços.
+                    // Vamos tentar formatar o termo para um slug simples.
+                    const iconName = termo.toLowerCase().replace(/\s+/g, '-');
+                    const urlIcone = `https://api.iconify.design/mdi/${iconName}.svg`;
+                    resultadoFinal += `${termo}: ${urlIcone}\n`;
                 }
             }
-
-            display.innerText = linksFormatados || "Nenhum resultado encontrado.";
-        };
+            display.innerText = resultadoFinal;
+        }
     </script>
 </body>
 </html>
