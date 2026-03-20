@@ -3,103 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Asset Command Center Pro</title>
+    <title>IA Asset Command Center - GOLD</title>
     <style>
         :root { --blue: #3b82f6; --cyan: #06b6d4; --pink: #ec4899; --green: #10b981; --bg: #0f172a; --card: #1e293b; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #f1f5f9; max-width: 800px; margin: 20px auto; padding: 15px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #f1f5f9; max-width: 850px; margin: 20px auto; padding: 15px; }
         .card { background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
-        h2 { text-align: center; color: #fff; margin-bottom: 20px; font-weight: 800; letter-spacing: -1px; }
-        textarea { width: 100%; height: 100px; background: #0f172a; color: #94a3b8; border: 2px solid #334155; border-radius: 12px; padding: 12px; font-size: 16px; box-sizing: border-box; transition: 0.3s; resize: none; }
-        textarea:focus { border-color: var(--blue); outline: none; color: #fff; }
-        .grid-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
-        button { padding: 12px 5px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; transition: all 0.2s; font-size: 12px; color: white; text-transform: uppercase; }
+        h2 { text-align: center; font-weight: 800; margin-bottom: 20px; }
+        textarea { width: 100%; height: 100px; background: #0f172a; color: #fff; border: 2px solid #334155; border-radius: 12px; padding: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 20px; resize: none; }
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        button { padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; color: white; text-transform: uppercase; transition: 0.2s; font-size: 11px; }
         button:active { transform: scale(0.95); }
         .b-img { background: var(--blue); } .b-icon { background: var(--cyan); color: #000; } .b-gif { background: var(--pink); }
-        .res-container { margin-top: 25px; }
-        .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .btn-copy { background: var(--green); padding: 5px 15px; font-size: 11px; width: auto; }
-        pre { background: #020617; padding: 15px; border-radius: 12px; font-family: 'Fira Code', monospace; font-size: 12px; color: #38bdf8; overflow-x: auto; white-space: pre-wrap; border: 1px solid #1e293b; min-height: 80px; }
+        .res-container { margin-top: 25px; background: #020617; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden; }
+        .res-header { display: flex; justify-content: space-between; padding: 12px 15px; background: #1e293b55; align-items: center; }
+        .btn-copy { background: var(--green); padding: 6px 15px; border-radius: 6px; font-size: 11px; width: auto; }
+        pre { padding: 15px; font-family: 'Fira Code', monospace; font-size: 12px; color: #38bdf8; overflow-x: auto; white-space: pre-wrap; margin: 0; min-height: 120px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🚀 Asset Command Center Pro</h2>
-    <textarea id="inputTemas" placeholder="Ex: tank, soldier, world war 2..."></textarea>
+    <h2>🚀 Asset Command Center GOLD</h2>
+    <textarea id="inputTemas" placeholder="Digite os temas separados por vírgula..."></textarea>
     
     <div class="grid-btns">
-        <button class="b-img" onclick="processar('imagem')">🖼️ Imagens (Wiki/Pix)</button>
-        <button class="b-icon" onclick="processar('icone')">🎨 Ícones (Iconify)</button>
-        <button class="b-gif" onclick="processar('gif')">🎬 GIFs (Tenor)</button>
+        <button class="b-img" onclick="buscarImagens()">🖼️ Imagens (Pixabay)</button>
+        <button class="b-icon" onclick="buscarIcones()">🎨 Ícones (Iconify)</button>
+        <button class="b-gif" onclick="buscarGifs()">🎬 GIFs (Giphy)</button>
     </div>
 
     <div class="res-container">
         <div class="res-header">
-            <span id="labelType" style="font-weight: bold; color: #94a3b8;">Resultados:</span>
+            <span id="labelType" style="color: #94a3b8; font-weight: bold;">Resultados:</span>
             <button class="btn-copy" onclick="copiar()">📋 Copiar Tudo</button>
         </div>
-        <pre id="display">Aguardando entrada...</pre>
+        <pre id="display">Aguardando comando...</pre>
     </div>
 </div>
 
 <script>
-    const API_VERCEL = "https://buscador-de-imagens-api-wikipedia.vercel.app";
-    const TENOR_KEY = "LIVM6AYHBN9M"; // Chave pública de teste
+    // CHAVES FORNECIDAS PELO USUÁRIO
+    const PIXABAY_KEY = "55099465-94163ed6def515c24f1cde5ce";
+    const GIPHY_KEY = "DqzZFL3DrwydR3B1DUnMHrbBj1yXoNFS";
 
-    async function processar(tipo) {
-        const input = document.getElementById('inputTemas');
-        const display = document.getElementById('display');
-        const label = document.getElementById('labelType');
-        const termos = input.value.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
-        
+    const display = document.getElementById('display');
+    const label = document.getElementById('labelType');
+
+    function getTermos() {
+        return document.getElementById('inputTemas').value.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
+    }
+
+    async function buscarImagens() {
+        const termos = getTermos();
         if (termos.length === 0) return;
-        display.innerText = "🔍 Buscando ativos...";
         let buffer = "";
-
-        if (tipo === 'imagem') {
-            label.innerText = "🖼️ IMAGENS (MIX WIKI/PIXABAY):";
-            label.style.color = "#3b82f6";
-            for (let t of termos) {
-                try {
-                    // Tenta Wikipedia primeiro
-                    const r = await fetch(`${API_VERCEL}/buscar/${encodeURIComponent(t)}`);
-                    const d = await r.json();
-                    buffer += `${t}: ${d.link}\n`;
-                } catch {
-                    // Fallback para link de busca Pixabay
-                    buffer += `${t}: https://pixabay.com/images/search/${t.replace(/\s+/g, '-')}/\n`;
-                }
-                display.innerText = buffer;
-            }
-        } 
-        else if (tipo === 'icone') {
-            label.innerText = "🎨 ÍCONES (ICONIFY):";
-            label.style.color = "#06b6d4";
-            termos.forEach(t => {
-                const slug = t.toLowerCase().replace(/\s+/g, '-');
-                buffer += `${t}: https://api.iconify.design/mdi/${slug}.svg\n`;
-            });
+        label.innerText = "🖼️ URLs DO PIXABAY:";
+        display.innerText = "🔍 Pesquisando imagens...";
+        
+        for (let t of termos) {
+            try {
+                const res = await fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(t)}&image_type=photo&safesearch=true&per_page=3`);
+                const data = await res.json();
+                if (data.hits && data.hits.length > 0) {
+                    buffer += `${t}: ${data.hits[0].largeImageURL}\n`;
+                } else { buffer += `${t}: (Não encontrado no Pixabay)\n`; }
+            } catch { buffer += `${t}: (Erro na API Pixabay)\n`; }
             display.innerText = buffer;
         }
-        else if (tipo === 'gif') {
-            label.innerText = "🎬 GIFs REAIS (TENOR API):";
-            label.style.color = "#ec4899";
-            for (let t of termos) {
-                try {
-                    const res = await fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(t)}&key=${TENOR_KEY}&limit=1`);
-                    const data = await res.json();
-                    if (data.results && data.results.length > 0) {
-                        buffer += `${t}: ${data.results[0].media_formats.gif.url}\n`;
-                    } else { buffer += `${t}: (Não encontrado)\n`; }
-                } catch { buffer += `${t}: (Erro API Tenor)\n`; }
-                display.innerText = buffer;
-            }
+    }
+
+    async function buscarIcones() {
+        const termos = getTermos();
+        if (termos.length === 0) return;
+        label.innerText = "🎨 ÍCONES DO ICONIFY (MDI):";
+        let buffer = "";
+        termos.forEach(t => {
+            const slug = t.toLowerCase().replace(/\s+/g, '-');
+            buffer += `${t}: https://api.iconify.design/mdi/${slug}.svg\n`;
+        });
+        display.innerText = buffer;
+    }
+
+    async function buscarGifs() {
+        const termos = getTermos();
+        if (termos.length === 0) return;
+        let buffer = "";
+        label.innerText = "🎬 GIFs REAIS DO GIPHY:";
+        display.innerText = "🎬 Pesquisando GIFs...";
+        
+        for (let t of termos) {
+            try {
+                const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(t)}&limit=1&rating=g`);
+                const data = await res.json();
+                if (data.data && data.data.length > 0) {
+                    // Pegamos a URL original estável que o Remark.js consegue ler
+                    buffer += `${t}: ${data.data[0].images.original.url}\n`;
+                } else { buffer += `${t}: (GIF não encontrado)\n`; }
+            } catch { buffer += `${t}: (Erro na API Giphy)\n`; }
+            display.innerText = buffer;
         }
     }
 
     function copiar() {
-        const texto = document.getElementById('display').innerText;
-        navigator.clipboard.writeText(texto).then(() => {
+        navigator.clipboard.writeText(display.innerText).then(() => {
             const btn = document.querySelector('.btn-copy');
             btn.innerText = "✅ Copiado!";
             setTimeout(() => btn.innerText = "📋 Copiar Tudo", 2000);
