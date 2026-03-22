@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IA Asset Command Center - ULTIMATE</title>
     <style>
-        :root { --blue: #3b82f6; --cyan: #06b6d4; --pink: #ec4899; --green: #10b981; --purple: #8b5cf6; --bg: #0f172a; --card: #1e293b; }
+        :root { --blue: #3b82f6; --cyan: #06b6d4; --pink: #ec4899; --green: #10b981; --purple: #8b5cf6; --orange: #f59e0b; --bg: #0f172a; --card: #1e293b; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: #f1f5f9; max-width: 900px; margin: 20px auto; padding: 15px; }
         .card { background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
         textarea { width: 100%; height: 100px; background: #0f172a; color: #fff; border: 2px solid #334155; border-radius: 12px; padding: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 20px; resize: none; }
         .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        @media (min-width: 600px) { .grid-btns { grid-template-columns: 1fr 1fr 1fr 1fr; } }
-        button { padding: 12px 5px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; color: white; text-transform: uppercase; transition: 0.2s; font-size: 10px; }
+        @media (min-width: 600px) { .grid-btns { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; } }
+        button { padding: 12px 5px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; color: white; text-transform: uppercase; transition: 0.2s; font-size: 9px; }
         button:active { transform: scale(0.95); }
-        .b-wiki { background: var(--purple); } .b-pix { background: var(--blue); } 
-        .b-icon { background: var(--cyan); color: #000; } .b-gif { background: var(--pink); }
+        .b-wiki { background: var(--purple); } 
+        .b-pix { background: var(--blue); } 
+        .b-un { background: var(--orange); } /* Cor do Unsplash */
+        .b-icon { background: var(--cyan); color: #000; } 
+        .b-gif { background: var(--pink); }
         .res-container { margin-top: 25px; background: #020617; border-radius: 12px; border: 1px solid #1e293b; }
         .res-header { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #1e293b; align-items: center; }
         .btn-copy { background: var(--green); padding: 5px 12px; border-radius: 6px; font-size: 11px; width: auto; }
@@ -25,13 +28,15 @@
 
 <div class="card">
     <h2>🚀 Asset Command Center ULTIMATE</h2>
+    <p style="font-size: 12px; color: #94a3b8; margin-top: -15px; margin-bottom: 15px;">🔒 Conexão Segura Ativada</p>
     <textarea id="inputTemas" placeholder="Ex: tank, world war 2, churchill..."></textarea>
     
     <div class="grid-btns">
-        <button class="b-wiki" onclick="buscarWiki()">📜 Wiki (Histórico)</button>
-        <button class="b-pix" onclick="buscarPixabay()">🖼️ Pixabay (Fotos)</button>
-        <button class="b-icon" onclick="buscarIcones()">🎨 Ícones (SVG)</button>
-        <button class="b-gif" onclick="buscarGifs()">🎬 GIFs (Giphy)</button>
+        <button class="b-wiki" onclick="buscarWiki()">📜 Wiki</button>
+        <button class="b-pix" onclick="buscar('pixabay')">🖼️ Pixabay</button>
+        <button class="b-un" onclick="buscar('unsplash')">📸 Unsplash</button>
+        <button class="b-icon" onclick="buscarIcones()">🎨 Ícones</button>
+        <button class="b-gif" onclick="buscar('giphy')">🎬 GIFs</button>
     </div>
 
     <div class="res-container">
@@ -44,10 +49,6 @@
 </div>
 
 <script>
-    const API_VERCEL = "https://buscador-de-imagens-api-wikipedia.wikipedia.app"; // Ajuste para sua URL real do Vercel
-    const PIXABAY_KEY = "55099465-94163ed6def515c24f1cde5ce";
-    const GIPHY_KEY = "DqzZFL3DrwydR3B1DUnMHrbBj1yXoNFS";
-
     const display = document.getElementById('display');
     const label = document.getElementById('labelType');
 
@@ -55,33 +56,39 @@
         return document.getElementById('inputTemas').value.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
     }
 
+    // Função universal segura para as APIs com chave
+    async function buscar(provedor) {
+        const termos = getTermos();
+        let buffer = "";
+        label.innerText = `🔍 BUSCA EM ${provedor.toUpperCase()}:`;
+        display.innerText = "Consultando servidor seguro...";
+
+        for (let t of termos) {
+            try {
+                // Chamada para a sua API no Vercel que esconde as chaves
+                const res = await fetch(`/api/buscar?tipo=${provedor}&tema=${encodeURIComponent(t)}`);
+                const data = await res.json();
+                
+                if (data.url) buffer += `${t}: ${data.url}\n`;
+                else buffer += `${t}: (Não encontrado no ${provedor})\n`;
+            } catch {
+                buffer += `${t}: (Erro na conexão segura)\n`;
+            }
+            display.innerText = buffer;
+        }
+    }
+
     async function buscarWiki() {
         const termos = getTermos();
         let buffer = "";
         label.innerText = "📜 URLs DA WIKIPEDIA:";
-        display.innerText = "🔍 Buscando no acervo histórico...";
+        display.innerText = "Buscando histórico...";
         for (let t of termos) {
             try {
                 const res = await fetch(`https://buscador-de-imagens-api-wikipedia.vercel.app/buscar/${encodeURIComponent(t)}`);
                 const data = await res.json();
                 buffer += `${t}: ${data.link}\n`;
-            } catch { buffer += `${t}: (Erro na API Wiki)\n`; }
-            display.innerText = buffer;
-        }
-    }
-
-    async function buscarPixabay() {
-        const termos = getTermos();
-        let buffer = "";
-        label.innerText = "🖼️ URLs DO PIXABAY:";
-        display.innerText = "🔍 Buscando fotos em alta...";
-        for (let t of termos) {
-            try {
-                const res = await fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(t)}&image_type=photo&safesearch=true`);
-                const data = await res.json();
-                if (data.hits && data.hits.length > 0) buffer += `${t}: ${data.hits[0].largeImageURL}\n`;
-                else buffer += `${t}: (Não encontrado)\n`;
-            } catch { buffer += `${t}: (Erro Pixabay)\n`; }
+            } catch { buffer += `${t}: (Erro na Wiki)\n`; }
             display.innerText = buffer;
         }
     }
@@ -97,6 +104,16 @@
         display.innerText = buffer;
     }
 
+    function copiar() {
+        navigator.clipboard.writeText(display.innerText).then(() => {
+            const btn = document.querySelector('.btn-copy');
+            btn.innerText = "✅ Copiado!";
+            setTimeout(() => btn.innerText = "📋 Copiar Tudo", 2000);
+        });
+    }
+</script>
+</body>
+</html>
     async function buscarGifs() {
         const termos = getTermos();
         let buffer = "";
