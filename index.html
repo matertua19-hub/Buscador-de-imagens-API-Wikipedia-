@@ -56,7 +56,7 @@
         return document.getElementById('inputTemas').value.split(/[\n,]+/).map(t => t.trim()).filter(t => t !== "");
     }
 
-    // Função universal segura para as APIs com chave
+        // Altere APENAS esta linha dentro da função buscar(provedor)
     async function buscar(provedor) {
         const termos = getTermos();
         let buffer = "";
@@ -65,13 +65,16 @@
 
         for (let t of termos) {
             try {
-                // Chamada para a sua API no Vercel que esconde as chaves
-                const res = await fetch(`/api/buscar?tipo=${provedor}&tema=${encodeURIComponent(t)}`);
+                // ADICIONE A URL DO SEU VERCEL ANTES DE /api/buscar
+                const base_url = "https://buscador-de-imagens-api-wikipedia.vercel.app"; 
+                const res = await fetch(`${base_url}/api/buscar?tipo=${provedor}&tema=${encodeURIComponent(t)}`);
+                
                 const data = await res.json();
                 
                 if (data.url) buffer += `${t}: ${data.url}\n`;
                 else buffer += `${t}: (Não encontrado no ${provedor})\n`;
-            } catch {
+            } catch (err) {
+                console.error(err); // Isso ajuda a ver o erro real no F12
                 buffer += `${t}: (Erro na conexão segura)\n`;
             }
             display.innerText = buffer;
