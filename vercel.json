@@ -1,3 +1,15 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "main.py" }]
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://matertua19-hub.github.io" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/buscar", "destination": "api/buscar.js" },
+    { "source": "/(.*)", "destination": "main.py" }
+  ]
 }
