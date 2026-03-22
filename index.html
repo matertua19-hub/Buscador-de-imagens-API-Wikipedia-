@@ -114,30 +114,3 @@
 </script>
 </body>
 </html>
-    async function buscarGifs() {
-        const termos = getTermos();
-        let buffer = "";
-        label.innerText = "🎬 GIFs DO GIPHY:";
-        display.innerText = "🎬 Buscando animações...";
-        for (let t of termos) {
-            try {
-                const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(t)}&limit=1&rating=g`);
-                const data = await res.json();
-                if (data.data && data.data.length > 0) buffer += `${t}: ${data.data[0].images.original.url}\n`;
-                else buffer += `${t}: (Não encontrado)\n`;
-            } catch { buffer += `${t}: (Erro Giphy)\n`; }
-            display.innerText = buffer;
-        }
-    }
-
-    function copiar() {
-        navigator.clipboard.writeText(display.innerText).then(() => {
-            const btn = document.querySelector('.btn-copy');
-            btn.innerText = "✅ Copiado!";
-            setTimeout(() => btn.innerText = "📋 Copiar Tudo", 2000);
-        });
-    }
-</script>
-
-</body>
-</html>
